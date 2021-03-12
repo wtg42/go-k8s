@@ -1,0 +1,60 @@
+# ingress.yaml
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: web-myadmin-ing
+  # annotations:
+  #   nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: sooon.myadmin.com
+    http:
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: myadmin-service
+              port:
+                number: 80
+
+---
+
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: go-api-ing
+  # annotations:
+  #   nginx.ingress.kubernetes.io/rewrite-target: /
+spec:
+  rules:
+  - host: api.sooon.com # minikube ip
+    http:
+      paths:
+        - path: /
+          pathType: Prefix
+          backend:
+            service:
+              name: go-api-service  #綁定名稱為 go-api-service 的 Service 物件
+              port:
+                number: 3000
+# ---
+# apiVersion: networking.k8s.io/v1
+# kind: Ingress
+# metadata:
+#   name: db-ing
+#   # annotations:
+#   #   nginx.ingress.kubernetes.io/rewrite-target: /
+# spec:
+#   rules:
+#   - host: db.sooon.com # minikube ip dns in /etc/hosts
+#     http:
+#       paths:
+#         - path: /
+#           pathType: Prefix
+#           backend:
+#             service:
+#               name: database-service
+#               port:
+#                 number: 30111 # service 開放的nodePort

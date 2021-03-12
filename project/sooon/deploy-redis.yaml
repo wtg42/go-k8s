@@ -1,0 +1,55 @@
+# redis-deployment.yaml
+
+---
+apiVersion: apps/v1   # 指定使用 apps/v1 版本的 api
+kind: Deployment        # 指定類型為 Deployment or StatefulSet
+metadata:        # 將 Pod 命名為 web，並加入 app:web 的標記
+  name: redis-master
+  labels: 
+    app: redis-deployment
+spec:                # 規格描述
+  selector:
+    matchLabels:    #必要
+      app: redis
+      role: master
+      tier: backend
+  replicas: 1        # 期望pod數 !!!讀寫分離還沒搞定
+  template:
+    metadata:
+      labels:
+        app: redis
+        role: master
+        tier: backend
+    spec:
+      containers:
+      - name: redis
+        image: redis
+        command:
+          - redis-server
+          - "/redis-master/redis.conf"
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: MASTER
+          value: "true"
+        ports:
+        - containerPort: 6379
+          protocol: "TCP"
+        resources:              # POD cpu/記憶體限制
+          requests:
+            cpu: 100m
+            memory: 100Mi
+        volumeMounts:
+        - mountPath: /redis-master-data
+          name: data
+        - mountPath: /redis-master
+          name: config
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: config
+          configMap:
+            name: example-redis-config
+            items:
+            - key: redis-config
+              path: redis.conf
+      

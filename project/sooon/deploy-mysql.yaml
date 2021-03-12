@@ -1,0 +1,104 @@
+# mysql-deployment.yaml
+
+---
+apiVersion: apps/v1   # 指定使用 apps/v1 版本的 api
+kind: Deployment        # 指定類型為 Deployment or StatefulSet
+metadata:        # 將 Pod 命名為 web，並加入 app:web 的標記
+  name: mysql
+  labels: 
+    app: mysql-deployment
+spec:                # 規格描述
+  replicas: 1        # 期望pod數 !!!讀寫分離還沒搞定
+  selector:
+    matchLabels:     # 必要
+      name: mysql
+  template:
+    metadata:
+      labels:
+        name: mysql
+    spec:
+      containers:
+      - name: mysql
+        image: mariadb
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3306
+        env:                    # mysql 相關登入設定
+        # - name: MYSQL_HOST
+        #   value: database-service
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysecret
+              key: adminpwd
+        - name: "MYSQL_USER"
+          valueFrom:
+            secretKeyRef:
+              name: mysecret
+              key: username
+        - name: "MYSQL_PASSWORD"
+          valueFrom:
+            secretKeyRef:
+              name: mysecret
+              key: userpwd
+        resources:              # POD cpu/記憶體限制
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 512Mi       # 最低記憶體需要512Mi不然會報錯誤
+        volumeMounts: # 掛載Pod上的捲到容器
+            - name: mysql-persistent-storage # Pod上卷的名字，與“volumes”名字匹配
+              mountPath: /var/lib/mysql # 掛載的Pod的目錄
+            - name: tz-config
+              mountPath: /etc/localtime # 時區調整用
+      volumes:   # 掛載持久捲到Pod
+        - name: mysql-persistent-storage # 持久卷名字， 與“volumMounts”名字匹配
+          persistentVolumeClaim: 
+            claimName: mysql-pv-claim  # 持久卷申請名字     
+        - name: tz-config # 時區調整用
+          hostPath:
+           path: /usr/share/zoneinfo/Asia/Taipei # 時區調整用
+           type: File # 時區調整用
+
+---
+apiVersion: apps/v1   # 指定使用 apps/v1 版本的 api
+kind: Deployment        # 指定類型為 Pod
+metadata:        # 將 Pod 命名為 web，並加入 app:web 的標記
+  name: myadmin
+  labels: 
+    app: myadmin-deployment
+spec:                # 規格描述
+  replicas: 1        # 期望pod數
+  selector:
+    matchLabels:     # 必要
+      name: phpmyadmin
+  template:
+    metadata:
+      labels:
+        name: phpmyadmin # template 的labels一定要設定讓service可以抓
+    spec:
+      containers:
+      - name: phpmyadmin
+        image: phpmyadmin/phpmyadmin
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+        env:
+        - name: PMA_HOST
+          value: database-service  #mysql deployment 的 metadata.name
+        - name: PMA_PORT
+          value: "3306"
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysecret
+              key: adminpwd
+        resources:            # POD cpu/記憶體限制
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 256Mi

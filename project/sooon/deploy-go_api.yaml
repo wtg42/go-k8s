@@ -1,0 +1,37 @@
+# go_api-deployment.yaml
+
+---
+apiVersion: apps/v1   # 指定使用 apps/v1 版本的 api
+kind: Deployment        # 指定類型為 Deployment
+metadata:        # 將 Pod 命名為 web，並加入 app:web 的標記
+  name: sooon-go
+  labels: 
+    app: sooon-go-deployment
+spec:                # 規格描述
+  replicas: 1        # 期望pod數
+  selector:
+    matchLabels:     # 必要
+      name: sooon-go
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 1
+  template:
+    metadata:
+      labels:
+        name: sooon-go
+    spec:
+      # runtimeClassName: gvisor
+      containers:
+      - name: sooon-go
+        image: waaagh4dockerhub/sooon-go:1.2
+        ports:
+        - containerPort: 3000
+        resources:              # POD cpu/記憶體限制
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 250m
+            memory: 512Mi       # 最低記憶體需要512Mi不然會報錯誤

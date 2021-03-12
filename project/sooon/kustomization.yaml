@@ -1,0 +1,11 @@
+# deploy-redis.yaml  container
+# redis-config       redis設定檔
+# kustomization.yaml configMapGenerator
+# 3位一體使用 "kubectl apply -k ." 搭配
+# kubectl exec -it redis-master-5f544f7d9d-qdkl2 -- redis-cli
+configMapGenerator:
+- name: example-redis-config
+  files:
+  - redis-config
+resources:
+- deploy-redis.yaml

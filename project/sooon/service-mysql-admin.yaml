@@ -1,0 +1,29 @@
+# mysql&phpmyadmin services.yaml
+# 開放port出來供外部使用或是內部串接使用
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: database-service
+spec:
+  ports:
+  - protocol: TCP
+    port: 3306 #container port
+    targetPort: 3306 
+    nodePort: 30111 # 固定外連的port
+  selector:
+    name: mysql
+  type: NodePort   #開放給其他叢集使用不對外開放
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: myadmin-service
+spec:
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 80
+  selector:
+    name: phpmyadmin
+  type: NodePort
